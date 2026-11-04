@@ -11,6 +11,32 @@ import './styles.css';
 type Tier = 'Foundations' | 'Intermediate' | 'Advanced';
 type Article = { slug: string; tier: Tier; title: string; summary: string; topics: string[]; kind: 'coordinates' | 'velocity' };
 type Citation = typeof citations[number];
+type Progress = { articles: string[]; exercises: string[] };
+
+const emptyProgress: Progress = { articles: [], exercises: [] };
+const progressKey = 'field-notes-progress';
+
+function readProgress(): Progress {
+  try {
+    const stored = window.localStorage.getItem(progressKey);
+    if (!stored) return emptyProgress;
+    const parsed = JSON.parse(stored) as Partial<Progress>;
+    return {
+      articles: Array.isArray(parsed.articles) ? parsed.articles.filter((item): item is string => typeof item === 'string') : [],
+      exercises: Array.isArray(parsed.exercises) ? parsed.exercises.filter((item): item is string => typeof item === 'string') : [],
+    };
+  } catch {
+    return emptyProgress;
+  }
+}
+
+function writeProgress(progress: Progress) {
+  try {
+    window.localStorage.setItem(progressKey, JSON.stringify(progress));
+  } catch {
+    // Progress is optional; the article remains usable when storage is unavailable.
+  }
+}
 
 const articles: Article[] = [
   { slug: 'coordinate-systems', tier: 'Foundations', title: 'Coordinate systems', summary: 'Choose a frame, state its origin, and make every geometric claim auditable.', topics: ['frames', 'coordinates', 'transformations'], kind: 'coordinates' },
@@ -71,14 +97,23 @@ function OrbitScene() {
   return <div className="orbit-card"><Canvas camera={{ position: [4, 3, 5], fov: 45 }}><ambientLight intensity={1.5} /><mesh rotation={[-Math.PI / 2, 0, 0]}><planeGeometry args={[7, 7]} /><meshBasicMaterial color="#dbe4ed" wireframe /></mesh><mesh><sphereGeometry args={[0.3, 24, 24]} /><meshBasicMaterial color="#e87955" /></mesh><lineLoop rotation={[-Math.PI / 2, 0, 0]}><bufferGeometry><bufferAttribute attach="attributes-position" args={[new Float32Array(Array.from({ length: 64 }, (_, i) => { const a = i / 63 * Math.PI * 2; return [2.4 * Math.cos(a), 0, 1.3 * Math.sin(a)]; }).flat()), 3]} count={64} /></bufferGeometry><lineBasicMaterial color="#1c6e8c" /></lineLoop></Canvas><span className="frame-badge">Barycentric frame · ẑ up</span></div>;
 }
 
-function ArticleView({ article, onCitation }: { article: Article; onCitation: (id: string) => void }) {
+function ArticleView({ article, onCitation, progress, onToggleArticle, onToggleExercise }: {
+  article: Article;
+  onCitation: (id: string) => void;
+  progress: Progress;
+  onToggleArticle: (slug: string) => void;
+  onToggleExercise: (slug: string) => void;
+}) {
   const isCoordinates = article.kind === 'coordinates';
+  const articleComplete = progress.articles.includes(article.slug);
+  const exerciseComplete = progress.exercises.includes(article.slug);
   return <article className="article">
     <div className="article-kicker">{article.tier} / {article.topics.join(' · ')}</div><h1>{article.title}</h1><p className="lede">{article.summary}</p>
     <div className="meta-row"><span>12 min read</span><span>Updated 04 Nov 2026</span><span className="status-dot">● template-ready</span></div>
     {isCoordinates ? <><h2>One point, three layers of meaning</h2><p>A coordinate system is not the point itself: it is an origin <i>O</i>, an ordered basis, and a unit convention. In an inertial frame, the position vector is the displacement from <i>O</i> to <i>P</i> <CitationMark id="strang" onOpen={onCitation} />. The useful engineering discipline is to name the frame in every interface, then treat a coordinate tuple as data local to that frame.</p><details open><summary>Core derivation · components from a basis</summary><div className="derivation"><p>With basis vectors e₁ and e₂, any point in the plane can be written as:</p><MathLine tex="r = x e_1 + y e_2" /><p>For a rotated orthonormal basis R(θ), the same geometric vector has coordinates r′ = Rᵀr. The transpose appears because we are changing the description while leaving the geometry fixed.</p><MathLine tex={'R(\\theta) = \\begin{bmatrix}\\cos\\theta & -\\sin\\theta \\\\ \\sin\\theta & \\cos\\theta\\end{bmatrix}'} /></div></details><FrameFigure /><h2>Applied example · robot workcells</h2><p>A pick-and-place controller can express a camera measurement in the camera frame, then transform it into the robot base frame before planning. The transform is not “just a matrix”: it encodes the declared relationship between two physical frames <CitationMark id="siciliano" onOpen={onCitation} />.</p></> : <><h2>Velocity is a local geometric object</h2><p>For a trajectory r(t), velocity is the derivative v(t) = dr/dt. It is tangent to the path, while speed is the scalar norm |v| <CitationMark id="goldstein" onOpen={onCitation} />. A velocity vector therefore carries information that a speedometer cannot: which way the state is moving.</p><details><summary>Core derivation · secant to tangent</summary><div className="derivation"><p>Start from the finite displacement over Δt and take the limit:</p><MathLine tex={'\\vec v(t) = \\lim_{\\Delta t\\to 0}\\frac{\\vec r(t+\\Delta t)-\\vec r(t)}{\\Delta t}'} /><p>For r(t) = (0.42t², 1.6t − 0.32t²), differentiation gives v(t) = (0.84t, 1.6 − 0.64t).</p></div></details><VelocityFigure /><h2>Applied example · inertial measurement units</h2><p>An IMU reports acceleration in its body frame. Integrating that signal estimates velocity, but only after rotating it into a navigation frame and accounting for gravity. Frame labels make the otherwise invisible assumptions inspectable <CitationMark id="goldstein" onOpen={onCitation} />.</p></>}
     <section className="callout"><h3>Where this shows up</h3><div className="chips">{(isCoordinates ? ['robotics', 'graphics', 'CAD', 'simulation'] : ['robotics', 'orbital mechanics', 'simulation', 'navigation']).map((x) => <span key={x}>{x}</span>)}</div></section>
-    <section className="exercise"><h3>Exercise <span>▸</span></h3><p>{isCoordinates ? 'A lidar point is measured as (2, −1, 0.5) m in a sensor frame. Describe the minimum metadata required before transforming it into a world frame.' : 'A particle follows r(t) = (3 cos t, 2 sin t). At t = π/4, compute v and speed. What does the tangent tell you about the ellipse?'}</p><details><summary>Reveal solution</summary><p>{isCoordinates ? 'Record the sensor frame identifier, the world-frame identifier, the rigid transform (rotation and translation), and the units. Without all four, the tuple is underspecified.' : 'v(t) = (−3 sin t, 2 cos t), so v(π/4) = (−3/√2, 2/√2) and |v| = √(13/2). The tangent is perpendicular to the radius only for a circle; on an ellipse the speed varies.'}</p></details></section>
+    <section className="exercise"><h3>Exercise <span>▸</span></h3><p>{isCoordinates ? 'A lidar point is measured as (2, −1, 0.5) m in a sensor frame. Describe the minimum metadata required before transforming it into a world frame.' : 'A particle follows r(t) = (3 cos t, 2 sin t). At t = π/4, compute v and speed. What does the tangent tell you about the ellipse?'}</p><details><summary>Reveal solution</summary><p>{isCoordinates ? 'Record the sensor frame identifier, the world-frame identifier, the rigid transform (rotation and translation), and the units. Without all four, the tuple is underspecified.' : 'v(t) = (−3 sin t, 2 cos t), so v(π/4) = (−3/√2, 2/√2) and |v| = √(13/2). The tangent is perpendicular to the radius only for a circle; on an ellipse the speed varies.'}</p></details><button className="progress-button" type="button" aria-pressed={exerciseComplete} onClick={() => onToggleExercise(article.slug)}>{exerciseComplete ? 'Exercise complete' : 'Mark exercise complete'}</button></section>
+    <button className="progress-button article-complete" type="button" aria-pressed={articleComplete} onClick={() => onToggleArticle(article.slug)}>{articleComplete ? 'Article complete' : 'Mark article complete'}</button>
   </article>;
 }
 
@@ -88,15 +123,37 @@ function App() {
   const [citationId, setCitationId] = useState<string | null>(null);
   const [showRefs, setShowRefs] = useState(false);
   const [query, setQuery] = useState('');
+  const [progress, setProgress] = useState<Progress>(readProgress);
   const search = useMemo(() => { const index = new MiniSearch({ idField: 'slug', fields: ['title', 'summary', 'topics'], storeFields: ['slug'] }); index.addAll(articles); return index; }, []);
   const results = query ? search.search(query).map((r) => articles.find((a) => a.slug === r.slug)!).filter(Boolean) : articles;
   const visible = results.filter((a) => tier === 'All' || a.tier === tier);
   const current = articles.find((a) => a.slug === selected) ?? articles[0];
   const citation = citationId ? citationMap.get(citationId) : null;
+  const updateProgress = (update: (current: Progress) => Progress) => {
+    setProgress((current) => {
+      const next = update(current);
+      writeProgress(next);
+      return next;
+    });
+  };
+  const toggleProgress = (key: keyof Progress, slug: string) => {
+    updateProgress((current) => ({
+      ...current,
+      [key]: current[key].includes(slug) ? current[key].filter((item) => item !== slug) : [...current[key], slug],
+    }));
+  };
+  const resetProgress = () => {
+    setProgress(emptyProgress);
+    try {
+      window.localStorage.removeItem(progressKey);
+    } catch {
+      // Progress is optional; resetting remains harmless when storage is unavailable.
+    }
+  };
   return <div className="app-shell">
     <header className="topbar"><a className="brand" href="#" onClick={() => setSelected('coordinate-systems')}><span className="brand-mark">∑</span><span>FIELD NOTES<small>analytic geometry / physics</small></span></a><label className="search"><span>⌕</span><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search concepts, applications, symbols..." /></label><button className="outline-button" onClick={() => setShowRefs(true)}>References <span>↗</span></button></header>
     <div className="layout"><aside className="sidebar"><div className="sidebar-label">Prerequisite map</div><div className="map"><div className="map-node active"><span>01</span><b>Foundations</b><small>the language of position</small></div><div className="map-line" /><div className="map-node"><span>02</span><b>Intermediate</b><small>constraints &amp; transformations</small></div><div className="map-line" /><div className="map-node"><span>03</span><b>Advanced</b><small>motion &amp; fields</small></div></div><nav><button className={selected === 'coordinate-systems' ? 'nav-item selected' : 'nav-item'} onClick={() => setSelected('coordinate-systems')}><span>01</span>Coordinate systems</button><button className={selected === 'velocity-as-a-vector' ? 'nav-item selected' : 'nav-item'} onClick={() => setSelected('velocity-as-a-vector')}><span>02</span>Vectors as velocity</button><button className="nav-item muted" onClick={() => setTier('Intermediate')}><span>03</span>Lines &amp; planes <em>soon</em></button><button className="nav-item muted" onClick={() => setTier('Advanced')}><span>04</span>Orbital state vectors <em>soon</em></button></nav><div className="sidebar-foot"><span className="status-dot">●</span> static build / v0.1</div></aside>
-      <main className="main"><div className="content-wrap"><div className="breadcrumb">FIELD NOTES <span>/</span> {current.tier.toUpperCase()} <span>/</span> ARTICLE</div><ArticleView article={current} onCitation={setCitationId} /></div><aside className="right-rail"><div className="rail-card"><span className="sidebar-label">In this tier</span><h3>Foundations</h3><p>Two articles · 24 min</p>{articles.filter((a) => a.tier === 'Foundations').map((a) => <button key={a.slug} onClick={() => setSelected(a.slug)} className={a.slug === current.slug ? 'rail-link current' : 'rail-link'}><span>{a.slug === current.slug ? '●' : '○'}</span>{a.title}</button>)}</div><div className="rail-card"><span className="sidebar-label">Filter map</span><div className="filter-buttons">{(['All', 'Foundations', 'Intermediate', 'Advanced'] as const).map((t) => <button key={t} className={tier === t ? 'filter active' : 'filter'} onClick={() => setTier(t)}>{t}</button>)}</div>{tier !== 'All' && <div className="search-results">{visible.map((a) => <button key={a.slug} onClick={() => setSelected(a.slug)}>{a.title}</button>)}</div>}</div><div className="rail-card glossary"><span className="sidebar-label">Notation</span><p><b>r</b> position vector</p><p><b>v</b> velocity</p><p><b>O</b> frame origin</p><p><b>R</b> rotation matrix</p></div></aside></main>
+      <main className="main"><div className="content-wrap"><div className="breadcrumb">FIELD NOTES <span>/</span> {current.tier.toUpperCase()} <span>/</span> ARTICLE</div><ArticleView article={current} onCitation={setCitationId} progress={progress} onToggleArticle={(slug) => toggleProgress('articles', slug)} onToggleExercise={(slug) => toggleProgress('exercises', slug)} /></div><aside className="right-rail"><div className="rail-card"><span className="sidebar-label">Progress</span><p>{progress.articles.length} of {articles.length} articles complete · {progress.exercises.length} exercises complete</p><button className="reset-progress" type="button" onClick={resetProgress}>Reset progress</button></div><div className="rail-card"><span className="sidebar-label">In this tier</span><h3>Foundations</h3><p>Two articles · 24 min</p>{articles.filter((a) => a.tier === 'Foundations').map((a) => <button key={a.slug} onClick={() => setSelected(a.slug)} className={a.slug === current.slug ? 'rail-link current' : 'rail-link'}><span>{progress.articles.includes(a.slug) ? '✓' : a.slug === current.slug ? '●' : '○'}</span>{a.title}</button>)}</div><div className="rail-card"><span className="sidebar-label">Filter map</span><div className="filter-buttons">{(['All', 'Foundations', 'Intermediate', 'Advanced'] as const).map((t) => <button key={t} className={tier === t ? 'filter active' : 'filter'} onClick={() => setTier(t)}>{t}</button>)}</div>{tier !== 'All' && <div className="search-results">{visible.map((a) => <button key={a.slug} onClick={() => setSelected(a.slug)}>{a.title}</button>)}</div>}</div><div className="rail-card glossary"><span className="sidebar-label">Notation</span><p><b>r</b> position vector</p><p><b>v</b> velocity</p><p><b>O</b> frame origin</p><p><b>R</b> rotation matrix</p></div></aside></main>
     </div>
     {citation && <div className="drawer-backdrop" onClick={() => setCitationId(null)}><aside className="citation-drawer" onClick={(e) => e.stopPropagation()}><button className="close" onClick={() => setCitationId(null)}>×</button><span className="sidebar-label">Source note</span><div className="citation-id">{citation.id}</div><h2>{citation.title}</h2><p className="citation-author">{citation.author} · {citation.publisher}, {citation.year}</p><p>{citation.explanation}</p><a href={citation.url} target="_blank" rel="noreferrer">Open source ↗</a></aside></div>}
     {showRefs && <div className="drawer-backdrop" onClick={() => setShowRefs(false)}><aside className="references-panel" onClick={(e) => e.stopPropagation()}><button className="close" onClick={() => setShowRefs(false)}>×</button><span className="sidebar-label">Registry</span><h2>References</h2><p className="lede">Every source used in the wiki, with its contribution made explicit.</p><div className="reference-toolbar"><input placeholder="Filter references..." /><div>{(['All', 'Foundations', 'Intermediate', 'Advanced'] as const).map((t) => <button key={t} className="filter">{t}</button>)}</div></div>{citations.map((c) => <div className="reference-entry" key={c.id}><div><span className="citation-id">{c.id}</span><span className="reference-topic">{c.tier} · {c.topic}</span></div><h3>{c.title}</h3><p>{c.author} · {c.year}</p><small>{c.explanation}</small></div>)}</aside></div>}
