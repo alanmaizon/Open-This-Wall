@@ -29,14 +29,14 @@ In the repository settings, set **Pages → Build and deployment → Source** to
 
 ## Roadmap
 
-- Load article metadata and content from MDX frontmatter as the single source of truth.
-- Add progress tracking for articles and exercises.
+- Compile MDX into reusable article components so prose, equations, citations, and figures share one content format.
+- Publish Intermediate and Advanced modules, including a lazy-loaded orbital scene.
 - Add accessible exercises with hidden solutions and self-check quizzes.
-- Add a global searchable and filterable references page with BibTeX export.
+- Add focus restoration and full focus trapping to all modal drawers.
 - Add a glossary with shared notation conventions.
 - Add code companions and prerequisite maps backed by article metadata.
 - Add CI checks for citation IDs, citation explanations, and required frontmatter.
-- Run typecheck, lint, and build checks before deployment.
+- Run typecheck, lint, content validation, coordinate tests, and build checks before deployment.
 
 ## Contributing
 

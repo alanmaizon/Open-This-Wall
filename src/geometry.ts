@@ -40,3 +40,22 @@ export const normalize = (v: Vector): Vector => {
 };
 
 export const dot = (a: Vector, b: Vector): number => a.x * b.x + a.y * b.y + (a.z ?? 0) * (b.z ?? 0);
+
+export const rotateVector = (vector: Vector, angleDegrees: number): Vector => {
+  const angle = angleDegrees * Math.PI / 180;
+  return {
+    x: Math.cos(angle) * vector.x - Math.sin(angle) * vector.y,
+    y: Math.sin(angle) * vector.x + Math.cos(angle) * vector.y,
+    frame: vector.frame,
+  };
+};
+
+/** Coordinates of a fixed geometric vector in a counter-clockwise rotated orthonormal basis. */
+export const coordinatesInRotatedBasis = (vector: Vector, angleDegrees: number): Vector => {
+  const angle = angleDegrees * Math.PI / 180;
+  return {
+    x: Math.cos(angle) * vector.x + Math.sin(angle) * vector.y,
+    y: -Math.sin(angle) * vector.x + Math.cos(angle) * vector.y,
+    frame: `rotated(${angleDegrees}°)`,
+  };
+};
