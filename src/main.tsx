@@ -80,12 +80,32 @@ function downloadBibtex() {
   URL.revokeObjectURL(url);
 }
 
-const articles: Article[] = [
-  { slug: 'coordinate-systems', tier: 'Foundations', title: 'Coordinate systems', summary: 'Choose a frame, state its origin, and make every geometric claim auditable.', topics: ['frames', 'coordinates', 'transformations'], kind: 'coordinates' },
-  { slug: 'velocity-as-a-vector', tier: 'Foundations', title: 'Vectors as velocity', summary: 'Read velocity as a geometric rate of change, not merely a signed speed.', topics: ['vectors', 'kinematics', 'derivatives'], kind: 'velocity' },
-  { slug: 'lines-and-planes', tier: 'Intermediate', title: 'Lines & planes', summary: 'Turn constraints into parametric and implicit geometry.', topics: ['constraints', 'geometry'], kind: 'coordinates' },
-  { slug: 'orbits', tier: 'Advanced', title: 'Orbital state vectors', summary: 'Use position and velocity to expose the shape of an orbit.', topics: ['orbits', 'dynamics'], kind: 'velocity' },
-];
+const articleFiles = import.meta.glob('./content/articles/*.mdx', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>;
+
+function parseArticle(source: string, path: string): Article {
+  const frontmatter = source.match(/^---\n([\s\S]*?)\n---/m)?.[1];
+  if (!frontmatter) throw new Error(`Missing frontmatter in ${path}`);
+  const fields = Object.fromEntries(frontmatter.split('\n').map((line) => {
+    const separator = line.indexOf(':');
+    return [line.slice(0, separator).trim(), line.slice(separator + 1).trim()];
+  }));
+  const topics = fields.topics?.replace(/^\[|\]$/g, '').split(',').map((topic) => topic.trim()).filter(Boolean) ?? [];
+  if (!fields.slug || !fields.tier || !fields.title || !fields.summary || !fields.kind || topics.length === 0) {
+    throw new Error(`Incomplete frontmatter in ${path}`);
+  }
+  return {
+    slug: fields.slug,
+    tier: fields.tier as Tier,
+    title: fields.title,
+    summary: fields.summary,
+    topics,
+    kind: fields.kind as Article['kind'],
+  };
+}
+
+const articles = Object.entries(articleFiles)
+  .map(([path, source]) => parseArticle(source, path))
+  .sort((a, b) => a.slug.localeCompare(b.slug));
 
 const glossaryEntries: GlossaryEntry[] = [
   { symbol: 'r', term: 'Position vector', meaning: 'Vector from the declared frame origin to a point.' },
@@ -212,7 +232,7 @@ function App() {
   };
   return <div className="app-shell">
     <header className="topbar"><a className="brand" href="#" onClick={() => setSelected('coordinate-systems')}><span className="brand-mark">∑</span><span>FIELD NOTES<small>analytic geometry / physics</small></span></a><label className="search"><span>⌕</span><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search concepts, applications, symbols..." /></label><button className="outline-button" onClick={() => setShowRefs(true)}>References <span>↗</span></button></header>
-    <div className="layout"><aside className="sidebar"><div className="sidebar-label">Prerequisite map</div><div className="map"><div className="map-node active"><span>01</span><b>Foundations</b><small>the language of position</small></div><div className="map-line" /><div className="map-node"><span>02</span><b>Intermediate</b><small>constraints &amp; transformations</small></div><div className="map-line" /><div className="map-node"><span>03</span><b>Advanced</b><small>motion &amp; fields</small></div></div><nav><button className={selected === 'coordinate-systems' ? 'nav-item selected' : 'nav-item'} onClick={() => setSelected('coordinate-systems')}><span>01</span>Coordinate systems</button><button className={selected === 'velocity-as-a-vector' ? 'nav-item selected' : 'nav-item'} onClick={() => setSelected('velocity-as-a-vector')}><span>02</span>Vectors as velocity</button><button className="nav-item muted" onClick={() => setTier('Intermediate')}><span>03</span>Lines &amp; planes <em>soon</em></button><button className="nav-item muted" onClick={() => setTier('Advanced')}><span>04</span>Orbital state vectors <em>soon</em></button></nav><div className="sidebar-foot"><span className="status-dot">●</span> static build / v0.1</div></aside>
+    <div className="layout"><aside className="sidebar"><div className="sidebar-label">Prerequisite map</div><div className="map"><div className="map-node active"><span>01</span><b>Foundations</b><small>the language of position</small></div><div className="map-line" /><div className="map-node"><span>02</span><b>Intermediate</b><small>constraints &amp; transformations</small></div><div className="map-line" /><div className="map-node"><span>03</span><b>Advanced</b><small>motion &amp; fields</small></div></div><nav>{articles.map((article, index) => <button key={article.slug} className={selected === article.slug ? 'nav-item selected' : 'nav-item'} onClick={() => setSelected(article.slug)}><span>{String(index + 1).padStart(2, '0')}</span>{article.title}</button>)}</nav><div className="sidebar-foot"><span className="status-dot">●</span> static build / v0.1</div></aside>
       <main className="main"><div className="content-wrap"><div className="breadcrumb">FIELD NOTES <span>/</span> {current.tier.toUpperCase()} <span>/</span> ARTICLE</div><ArticleView article={current} onCitation={setCitationId} progress={progress} onToggleArticle={(slug) => toggleProgress('articles', slug)} onToggleExercise={(slug) => toggleProgress('exercises', slug)} /></div><aside className="right-rail"><div className="rail-card"><span className="sidebar-label">Progress</span><p>{progress.articles.length} of {articles.length} articles complete · {progress.exercises.length} exercises complete</p><button className="reset-progress" type="button" onClick={resetProgress}>Reset progress</button></div><div className="rail-card"><span className="sidebar-label">In this tier</span><h3>Foundations</h3><p>Two articles · 24 min</p>{articles.filter((a) => a.tier === 'Foundations').map((a) => <button key={a.slug} onClick={() => setSelected(a.slug)} className={a.slug === current.slug ? 'rail-link current' : 'rail-link'}><span>{progress.articles.includes(a.slug) ? '✓' : a.slug === current.slug ? '●' : '○'}</span>{a.title}</button>)}</div><div className="rail-card"><span className="sidebar-label">Filter map</span><div className="filter-buttons">{(['All', 'Foundations', 'Intermediate', 'Advanced'] as const).map((t) => <button key={t} className={tier === t ? 'filter active' : 'filter'} onClick={() => setTier(t)}>{t}</button>)}</div>{tier !== 'All' && <div className="search-results">{visible.map((a) => <button key={a.slug} onClick={() => setSelected(a.slug)}>{a.title}</button>)}</div>}</div><div className="rail-card glossary"><span className="sidebar-label">Notation</span><p><b>r</b> position vector</p><p><b>v</b> velocity</p><p><b>O</b> frame origin</p><p><b>R</b> rotation matrix</p><button className="glossary-link" type="button" onClick={() => setShowGlossary(true)}>Open glossary</button></div></aside></main>
     </div>
     {citation && <div className="drawer-backdrop" onClick={() => setCitationId(null)}><aside className="citation-drawer" role="dialog" aria-modal="true" aria-labelledby="citation-title" onClick={(e) => e.stopPropagation()}><button className="close" type="button" aria-label="Close source note" onClick={() => setCitationId(null)}>×</button><span className="sidebar-label">Source note</span><div className="citation-id">{citation.id}</div><h2 id="citation-title">{citation.title}</h2><p className="citation-author">{citation.author} · {citation.publisher}, {citation.year}</p><p>{citation.explanation}</p><a href={citation.url} target="_blank" rel="noreferrer">Open source ↗</a></aside></div>}
