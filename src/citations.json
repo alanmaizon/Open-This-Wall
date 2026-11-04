@@ -8,6 +8,7 @@
     "tier": "Foundations",
     "topic": "Kinematics",
     "explanation": "A standard derivation of position, velocity, and coordinate transformations in Newtonian mechanics.",
+    "doi": "10.1201/9780429503553",
     "url": "https://doi.org/10.1201/9780429503553"
   },
   {
@@ -30,6 +31,7 @@
     "tier": "Intermediate",
     "topic": "Robotics",
     "explanation": "Shows how frames and vector quantities are composed in robot kinematics and control.",
+    "doi": "10.1007/978-1-84628-642-1",
     "url": "https://doi.org/10.1007/978-1-84628-642-1"
   },
   {
@@ -41,6 +43,7 @@
     "tier": "Advanced",
     "topic": "Orbital mechanics",
     "explanation": "Develops position and velocity vectors as the state variables of an orbit.",
+    "doi": "10.2514/4.861543",
     "url": "https://arc.aiaa.org/doi/book/10.2514/4.861543"
   }
 ]

@@ -10,3 +10,4 @@
 @media(max-width:700px){.topbar{height:auto;min-height:74px;flex-wrap:wrap;padding:14px 16px;gap:12px}.search{order:3;width:100%;margin:0}.outline-button{margin-left:auto}.layout{display:block}.sidebar{display:none}.main{padding:26px 18px 50px}.article h1{font-size:43px}.meta-row{flex-wrap:wrap;gap:8px}.figure-toolbar{align-items:flex-start;gap:10px;flex-direction:column}.equation-strip{flex-wrap:wrap;gap:9px}.citation-drawer,.references-panel{padding:42px 24px}}
 .progress-button,.reset-progress{border:1px solid var(--blue);background:#fff;color:var(--blue);border-radius:3px;padding:8px 11px;font:500 11px 'DM Mono'}
 .progress-button{margin-top:14px}.progress-button[aria-pressed="true"]{background:var(--pale)}.article-complete{margin-top:30px}.reset-progress{margin-top:14px}
+.export-button{border:1px solid var(--blue);background:#fff;color:var(--blue);border-radius:3px;padding:8px 11px;font:500 11px 'DM Mono'}

@@ -10,7 +10,20 @@ import './styles.css';
 
 type Tier = 'Foundations' | 'Intermediate' | 'Advanced';
 type Article = { slug: string; tier: Tier; title: string; summary: string; topics: string[]; kind: 'coordinates' | 'velocity' };
-type Citation = typeof citations[number];
+type Citation = {
+  id: string;
+  author: string;
+  title: string;
+  publisher: string;
+  year: number;
+  tier: string;
+  topic: string;
+  explanation: string;
+  doi?: string;
+  isbn?: string;
+  pages?: string;
+  url?: string;
+};
 type Progress = { articles: string[]; exercises: string[] };
 
 const emptyProgress: Progress = { articles: [], exercises: [] };
@@ -36,6 +49,34 @@ function writeProgress(progress: Progress) {
   } catch {
     // Progress is optional; the article remains usable when storage is unavailable.
   }
+}
+
+function bibtexValue(value: string) {
+  return value.replace(/[{}]/g, '').replace(/\\/g, '\\\\');
+}
+
+function citationBibtex(citation: Citation) {
+  const fields = [
+    `  author = {${bibtexValue(citation.author)}}`,
+    `  title = {${bibtexValue(citation.title)}}`,
+    `  year = {${citation.year}}`,
+    citation.publisher && `  publisher = {${bibtexValue(citation.publisher)}}`,
+    citation.doi && `  doi = {${bibtexValue(citation.doi)}}`,
+    citation.isbn && `  isbn = {${bibtexValue(citation.isbn)}}`,
+    citation.pages && `  pages = {${bibtexValue(citation.pages)}}`,
+    citation.url && `  url = {${bibtexValue(citation.url)}}`,
+  ].filter(Boolean);
+  return `@misc{${citation.id},\n${fields.join(',\n')}\n}`;
+}
+
+function downloadBibtex() {
+  const content = citations.map(citationBibtex).join('\n\n');
+  const url = URL.createObjectURL(new Blob([`${content}\n`], { type: 'application/x-bibtex' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'field-notes-references.bib';
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 const articles: Article[] = [
@@ -166,7 +207,7 @@ function App() {
       <main className="main"><div className="content-wrap"><div className="breadcrumb">FIELD NOTES <span>/</span> {current.tier.toUpperCase()} <span>/</span> ARTICLE</div><ArticleView article={current} onCitation={setCitationId} progress={progress} onToggleArticle={(slug) => toggleProgress('articles', slug)} onToggleExercise={(slug) => toggleProgress('exercises', slug)} /></div><aside className="right-rail"><div className="rail-card"><span className="sidebar-label">Progress</span><p>{progress.articles.length} of {articles.length} articles complete · {progress.exercises.length} exercises complete</p><button className="reset-progress" type="button" onClick={resetProgress}>Reset progress</button></div><div className="rail-card"><span className="sidebar-label">In this tier</span><h3>Foundations</h3><p>Two articles · 24 min</p>{articles.filter((a) => a.tier === 'Foundations').map((a) => <button key={a.slug} onClick={() => setSelected(a.slug)} className={a.slug === current.slug ? 'rail-link current' : 'rail-link'}><span>{progress.articles.includes(a.slug) ? '✓' : a.slug === current.slug ? '●' : '○'}</span>{a.title}</button>)}</div><div className="rail-card"><span className="sidebar-label">Filter map</span><div className="filter-buttons">{(['All', 'Foundations', 'Intermediate', 'Advanced'] as const).map((t) => <button key={t} className={tier === t ? 'filter active' : 'filter'} onClick={() => setTier(t)}>{t}</button>)}</div>{tier !== 'All' && <div className="search-results">{visible.map((a) => <button key={a.slug} onClick={() => setSelected(a.slug)}>{a.title}</button>)}</div>}</div><div className="rail-card glossary"><span className="sidebar-label">Notation</span><p><b>r</b> position vector</p><p><b>v</b> velocity</p><p><b>O</b> frame origin</p><p><b>R</b> rotation matrix</p></div></aside></main>
     </div>
     {citation && <div className="drawer-backdrop" onClick={() => setCitationId(null)}><aside className="citation-drawer" role="dialog" aria-modal="true" aria-labelledby="citation-title" onClick={(e) => e.stopPropagation()}><button className="close" type="button" aria-label="Close source note" onClick={() => setCitationId(null)}>×</button><span className="sidebar-label">Source note</span><div className="citation-id">{citation.id}</div><h2 id="citation-title">{citation.title}</h2><p className="citation-author">{citation.author} · {citation.publisher}, {citation.year}</p><p>{citation.explanation}</p><a href={citation.url} target="_blank" rel="noreferrer">Open source ↗</a></aside></div>}
-    {showRefs && <div className="drawer-backdrop" onClick={() => setShowRefs(false)}><aside className="references-panel" role="dialog" aria-modal="true" aria-labelledby="references-title" onClick={(e) => e.stopPropagation()}><button className="close" type="button" aria-label="Close references" onClick={() => setShowRefs(false)}>×</button><span className="sidebar-label">Registry</span><h2 id="references-title">References</h2><p className="lede">Every source used in the wiki, with its contribution made explicit.</p><div className="reference-toolbar"><label htmlFor="reference-search">Search references</label><input id="reference-search" value={referenceQuery} onChange={(e) => setReferenceQuery(e.target.value)} placeholder="Author, title, explanation..." /><div className="reference-filters"><span>Tier</span>{(['All', 'Foundations', 'Intermediate', 'Advanced'] as const).map((t) => <button type="button" key={t} className={referenceTier === t ? 'filter active' : 'filter'} aria-pressed={referenceTier === t} onClick={() => setReferenceTier(t)}>{t}</button>)}</div><label htmlFor="reference-topic">Topic</label><select id="reference-topic" value={referenceTopic} onChange={(e) => setReferenceTopic(e.target.value)}><option>All</option>{referenceTopics.map((topic) => <option key={topic}>{topic}</option>)}</select></div>{visibleReferences.length === 0 && <p className="empty-results">No references match the current filters.</p>}{visibleReferences.map((c) => <div className="reference-entry" key={c.id}><div><span className="citation-id">{c.id}</span><span className="reference-topic">{c.tier} · {c.topic}</span></div><h3>{c.title}</h3><p>{c.author} · {c.year}</p><small>{c.explanation}</small>{c.url && <a className="reference-link" href={c.url} target="_blank" rel="noreferrer">Open source ↗</a>}</div>)}</aside></div>}
+    {showRefs && <div className="drawer-backdrop" onClick={() => setShowRefs(false)}><aside className="references-panel" role="dialog" aria-modal="true" aria-labelledby="references-title" onClick={(e) => e.stopPropagation()}><button className="close" type="button" aria-label="Close references" onClick={() => setShowRefs(false)}>×</button><span className="sidebar-label">Registry</span><h2 id="references-title">References</h2><p className="lede">Every source used in the wiki, with its contribution made explicit.</p><button className="export-button" type="button" onClick={downloadBibtex}>Download BibTeX</button><div className="reference-toolbar"><label htmlFor="reference-search">Search references</label><input id="reference-search" value={referenceQuery} onChange={(e) => setReferenceQuery(e.target.value)} placeholder="Author, title, explanation..." /><div className="reference-filters"><span>Tier</span>{(['All', 'Foundations', 'Intermediate', 'Advanced'] as const).map((t) => <button type="button" key={t} className={referenceTier === t ? 'filter active' : 'filter'} aria-pressed={referenceTier === t} onClick={() => setReferenceTier(t)}>{t}</button>)}</div><label htmlFor="reference-topic">Topic</label><select id="reference-topic" value={referenceTopic} onChange={(e) => setReferenceTopic(e.target.value)}><option>All</option>{referenceTopics.map((topic) => <option key={topic}>{topic}</option>)}</select></div>{visibleReferences.length === 0 && <p className="empty-results">No references match the current filters.</p>}{visibleReferences.map((c) => <div className="reference-entry" key={c.id}><div><span className="citation-id">{c.id}</span><span className="reference-topic">{c.tier} · {c.topic}</span></div><h3>{c.title}</h3><p>{c.author} · {c.year}</p><small>{c.explanation}</small>{c.doi && <a className="reference-link" href={`https://doi.org/${c.doi}`} target="_blank" rel="noreferrer">DOI ↗</a>}{c.url && !c.doi && <a className="reference-link" href={c.url} target="_blank" rel="noreferrer">Open source ↗</a>}</div>)}</aside></div>}
   </div>;
 }
 
