@@ -162,6 +162,7 @@ function VelocityFigure() {
   </div>;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function OrbitScene() {
   return <div className="orbit-card"><Canvas camera={{ position: [4, 3, 5], fov: 45 }}><ambientLight intensity={1.5} /><mesh rotation={[-Math.PI / 2, 0, 0]}><planeGeometry args={[7, 7]} /><meshBasicMaterial color="#dbe4ed" wireframe /></mesh><mesh><sphereGeometry args={[0.3, 24, 24]} /><meshBasicMaterial color="#e87955" /></mesh><lineLoop rotation={[-Math.PI / 2, 0, 0]}><bufferGeometry><bufferAttribute attach="attributes-position" args={[new Float32Array(Array.from({ length: 64 }, (_, i) => { const a = i / 63 * Math.PI * 2; return [2.4 * Math.cos(a), 0, 1.3 * Math.sin(a)]; }).flat()), 3]} count={64} /></bufferGeometry><lineBasicMaterial color="#1c6e8c" /></lineLoop></Canvas><span className="frame-badge">Barycentric frame · ẑ up</span></div>;
 }
