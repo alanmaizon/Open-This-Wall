@@ -18,10 +18,34 @@ In the repository settings, set **Pages → Build and deployment → Source** to
 
 `https://alanmaizon.github.io/Open-This-Wall/`
 
+## Article status
+
+| Article | Tier | Status |
+| --- | --- | --- |
+| Coordinate systems | Foundations | Drafted |
+| Vectors as velocity | Foundations | Drafted |
+| Lines & planes | Intermediate | Planned |
+| Orbital state vectors | Advanced | Planned |
+
+## Roadmap
+
+- Load article metadata and content from MDX frontmatter as the single source of truth.
+- Add progress tracking for articles and exercises.
+- Add accessible exercises with hidden solutions and self-check quizzes.
+- Add a global searchable and filterable references page with BibTeX export.
+- Add a glossary with shared notation conventions.
+- Add code companions and prerequisite maps backed by article metadata.
+- Add CI checks for citation IDs, citation explanations, and required frontmatter.
+- Run typecheck, lint, and build checks before deployment.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the article, figure, citation, and pull request requirements.
+
 ## Adding an article
 
 1. Add an `.mdx` file under `src/content/articles/` with YAML frontmatter (`slug`, `tier`, `title`, `summary`, and `topics`).
-2. Add its metadata to the `articles` array in `src/main.tsx` and select a figure kind or add an article renderer.
+2. The article metadata will be loaded from its frontmatter; do not duplicate it in application code.
 3. Keep equations and factual claims paired with a `CitationMark` so readers can inspect the registry entry.
 
 ## Adding a figure
