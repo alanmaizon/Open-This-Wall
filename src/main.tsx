@@ -88,7 +88,7 @@ function App() {
   const [citationId, setCitationId] = useState<string | null>(null);
   const [showRefs, setShowRefs] = useState(false);
   const [query, setQuery] = useState('');
-  const search = useMemo(() => { const index = new MiniSearch({ fields: ['title', 'summary', 'topics'], storeFields: ['slug'] }); index.addAll(articles); return index; }, []);
+  const search = useMemo(() => { const index = new MiniSearch({ idField: 'slug', fields: ['title', 'summary', 'topics'], storeFields: ['slug'] }); index.addAll(articles); return index; }, []);
   const results = query ? search.search(query).map((r) => articles.find((a) => a.slug === r.slug)!).filter(Boolean) : articles;
   const visible = results.filter((a) => tier === 'All' || a.tier === tier);
   const current = articles.find((a) => a.slug === selected) ?? articles[0];
