@@ -10,6 +10,14 @@ npm run dev
 npm run build
 ```
 
+## Deploying to GitHub Pages
+
+The `main` branch is deployed automatically by `.github/workflows/deploy-pages.yml`.
+In the repository settings, set **Pages → Build and deployment → Source** to
+**GitHub Actions**. The site will be available at:
+
+`https://alanmaizon.github.io/Open-This-Wall/`
+
 ## Adding an article
 
 1. Add an `.mdx` file under `src/content/articles/` with YAML frontmatter (`slug`, `tier`, `title`, `summary`, and `topics`).
