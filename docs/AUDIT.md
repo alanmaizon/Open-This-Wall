@@ -2,125 +2,36 @@
 
 Date: 2026-11-04
 
-## Scope and current baseline
+## Completed
 
-This audit covers the full `src/` tree, `README.md`, `package.json`, the GitHub
-Actions workflow, both article files, and `src/citations.json`. The current
-production build succeeds with `npm ci && npm run build`. There is no lint or
-test script in `package.json`. The repository is a small React/Vite/TypeScript
-application with two article files and one application entry point.
-
-## Planned feature status
-
-| Feature | Status | Evidence |
+| Area | Status | Implementation |
 | --- | --- | --- |
-| Prerequisite maps per tier | Partial | `src/main.tsx` displays a static three-node map, but it is not data-driven and has no article prerequisites or completion state. |
-| Three tiers | Partial | `Foundations`, `Intermediate`, and `Advanced` are represented in the type, filters, map, and citation metadata. Only two Foundations articles are backed by files; Intermediate and Advanced entries in `main.tsx` are placeholders. |
-| Exercises with hidden solutions | Present, incomplete | Both rendered articles contain native `<details>` solutions. There is no completion state, exercise metadata, or dedicated accessible reveal label beyond the summary text. |
-| “Where this shows up” sections | Present | `ArticleView` renders a callout for both article variants. |
-| Glossary with notation conventions | Partial | A static notation card exists in the right rail. It is not a glossary page and is not linked from articles. |
-| Global searchable/filterable references page | Partial | A references drawer lists all four citation records and has an input and tier buttons, but neither control is wired to state; there is no topic filter or standalone page. |
-| Progress tracking | Missing | No progress state, `localStorage` use, completion controls, or reset control exists. |
-| Code companions | Missing | No code-companion content or code examples are registered. |
-| Self-check quizzes | Missing | No quiz model, questions, answers, or scoring UI exists. |
+| Article registry | Complete | `src/content/registry.ts` eagerly loads MDX frontmatter and body, validates tier/kind, and filters unpublished entries. |
+| Article discovery | Complete | Desktop and mobile navigation, search, tier filters, breadcrumbs, progress counts, and the right rail consume the published registry. |
+| Mobile navigation | Complete | The mobile header exposes a keyboard-accessible drawer containing every published article grouped by tier. Selection closes the drawer without a reload. |
+| Progress | Complete | Article and exercise completion persist in `localStorage`; reset is available from the progress rail. |
+| References | Complete | Citation marks open a source drawer; references support text, tier, topic filtering, and BibTeX export. |
+| Coordinate figure | Complete | The geometric point remains fixed while coordinates are calculated as `Rᵀr` in the rotated orthonormal basis. Pointer listeners are removed on pointer-up and keyboard arrows move the point. |
+| Content validation | Complete | `npm run validate:content` checks required metadata, tiers, publication flags, and citation IDs. |
 
-## Geometry and figures
+## Partial or known limitations
 
-Geometry types are shared rather than duplicated. `Point`, `Vector`, and
-`Plane` are defined in `src/geometry.ts`, with reusable operations such as
-`add`, `magnitude`, and `normalize`. The 2D frame and velocity figures import
-and use these types. The 3D orbit scene currently computes its geometry inline
-and does not use the shared types, but it does not define duplicate geometry
-types.
+- MDX is currently loaded as raw text. The registry owns the article body and metadata, while the two existing interactive article layouts remain typed React renderers selected by `kind`; arbitrary MDX JSX is not yet compiled.
+- Only two articles are published. Intermediate and Advanced are represented as learning tiers but have no published content yet, so their navigation sections are intentionally empty.
+- KaTeX receives developer-authored equation strings only. `MathLine` uses `dangerouslySetInnerHTML` because KaTeX returns HTML; user-controlled text is never passed to it. KaTeX CSS is currently loaded from jsDelivr and should eventually be bundled for offline resilience.
+- Dialogs close by backdrop, close button, and (for the mobile article drawer) Escape. Citation, references, and glossary drawers do not yet restore focus to the trigger or provide a full focus trap.
+- `OrbitScene` was removed from the application path because it was dead code and forced the 3D dependency into the main bundle without an educational module. It should return as a lazy-loaded Advanced article figure when orbital content is published, with an error boundary and accessible fallback.
+- The coordinate regression script validates the transformation contract, but there is not yet a browser test runner in CI.
 
-The frame figure has a pointer-drag interaction and a range input; the
-velocity figure has a range input; and the orbit scene renders a static
-React Three Fiber canvas. The drag target has `tabIndex={0}` but no keyboard
-interaction or accessible name, so it is not keyboard-equivalent to the
-pointer interaction.
+## Accessibility and responsive review
 
-## Citations and factual claims
+The mobile layout was checked at 320px and 390px, and the 768px breakpoint remains covered by the responsive grid rules. The drawer has a labelled dialog, visible close control, selected article state, keyboard focus, Escape handling, and background scroll locking. SVGs have accessible names and the point has a keyboard equivalent.
 
-`src/citations.json` contains four entries, and all four currently include a
-non-empty `explanation`. The records are:
+Remaining accessibility debt includes focus restoration for non-mobile drawers, more explicit live announcements when an article changes, and a more complete keyboard interaction model for drag gestures.
 
-- `goldstein` — used by the velocity article.
-- `strang` — used by the coordinate-systems article.
-- `siciliano` — used by the coordinate-systems article.
-- `battin` — currently unused.
+## Technical debt and next milestones
 
-Citation marks are implemented as accessible buttons by `CitationMark` in
-`src/main.tsx`, and the drawer displays each selected citation's explanation.
-However, citation coverage is not complete: many factual paragraphs,
-derivations, displayed equations, exercise solutions, figure labels, and
-“Where this shows up” claims have no `CitationMark`. The citation mark number
-is also hard-coded to three cases and is not derived from the registry.
-
-The current citation drawer opens a source URL when one is present. All four
-records have URLs, but external URL reachability could not be verified from
-this environment because outbound requests returned HTTP `000`. No URL is
-syntactically missing in the current registry.
-
-## Math rendering
-
-KaTeX is installed as the `katex` dependency and is used by `MathLine` via
-`katex.renderToString`. The stylesheet also imports KaTeX CSS from a jsDelivr
-URL. The production build completes, so the rendering code type-checks and
-bundles successfully. The current article text also contains several
-plain-text equations that are not passed through `MathLine`.
-
-## Article registration
-
-Articles are registered in two places:
-
-1. The files under `src/content/articles/` contain frontmatter for:
-   `coordinate-systems` and `velocity-as-a-vector`.
-2. The `articles` array in `src/main.tsx` repeats those records and adds
-   `lines-and-planes` and `orbits`, for which no article files exist.
-
-The app does not load or parse MDX files at runtime/build time; the rendered
-article body and metadata are hard-coded in `ArticleView`. Frontmatter is
-therefore not the source of truth today. The planned fix should load article
-metadata from the article folder automatically and remove the duplicate
-registration, while preserving the existing article content.
-
-## Links, alternative text, and keyboard access
-
-- `index.html` has `lang="en"` and a descriptive document title.
-- The brand link uses `href="#"`, which is a placeholder navigation link and
-  changes the URL rather than representing a real home route.
-- Citation links use `target="_blank"` with `rel="noreferrer"` and are
-  structurally valid, but their external reachability was not testable here.
-- The two main SVG figures have `role="img"` and `aria-label` descriptions.
-  The orbit canvas has no equivalent accessible description.
-- There are no raster images requiring `alt` text.
-- Native buttons, inputs, range controls, and `<details>/<summary>` provide
-  keyboard access for most controls.
-- The draggable SVG circle is focusable but has no keyboard handler or
-  accessible name, so its interaction is not keyboard accessible.
-- The references search input has no label or `aria-label`; the close buttons
-  have no accessible name; and the references filter buttons do not expose
-  selected state.
-- The drawer backdrop closes on click but has no focus management, focus trap,
-  Escape-key handling, or dialog semantics.
-- The “soon” tier buttons filter the current list rather than opening a
-  corresponding article, which can leave the selected article and visible
-  tier inconsistent.
-
-## CI and repository metadata
-
-The only workflow, `.github/workflows/deploy-pages.yml`, installs dependencies,
-runs `npm run build`, uploads `dist`, and deploys GitHub Pages. It does not run
-lint, tests, citation validation, frontmatter validation, or a separate
-typecheck command beyond the typecheck bundled into the build. `package.json`
-is named `analytic-geometry-wiki`, while the README heading and document title
-use “Field Notes”; naming is inconsistent.
-
-## Recommended implementation order after review
-
-1. Resolve the project name and license choice with the maintainer.
-2. Make frontmatter the single article metadata source and remove phantom
-   article registrations.
-3. Add contributor guidance, README status/roadmap, and validation scripts.
-4. Implement the requested features one branch and pull request at a time,
-   starting with progress tracking.
+1. Compile MDX into reusable article components so article prose, equations, citations, and figures can be authored in one content format rather than selecting a `kind` renderer.
+2. Publish the planned Intermediate and Advanced articles, including a lazy-loaded orbit visualisation with loading/error states.
+3. Add Playwright tests to CI for 320px/375px/390px/768px and desktop navigation, search, breadcrumbs, progress persistence, and citation drawers.
+4. Add focus restoration/focus trapping to every modal drawer and bundle KaTeX/font assets where offline deployment is required.

@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 const articlesDirectory = new URL('../src/content/articles/', import.meta.url);
 const citationsPath = new URL('../src/citations.json', import.meta.url);
-const requiredFields = ['slug', 'tier', 'title', 'summary', 'topics', 'kind'];
+const requiredFields = ['slug', 'tier', 'title', 'summary', 'topics', 'kind', 'readingTime', 'prerequisites', 'published'];
 const citations = JSON.parse(await readFile(citationsPath, 'utf8'));
 const citationMap = new Map(citations.map((citation) => [citation.id, citation]));
 const files = (await readdir(articlesDirectory)).filter((file) => file.endsWith('.mdx'));
@@ -22,8 +22,10 @@ for (const file of files) {
     return [line.slice(0, separator).trim(), line.slice(separator + 1).trim()];
   }));
   for (const field of requiredFields) {
-    if (!fields[field]) errors.push(`${file}: missing required field "${field}"`);
+    if (fields[field] === undefined || fields[field] === '') errors.push(`${file}: missing required field "${field}"`);
   }
+  if (!['Foundations', 'Intermediate', 'Advanced'].includes(fields.tier)) errors.push(`${file}: invalid tier "${fields.tier}"`);
+  if (!['true', 'false'].includes(fields.published)) errors.push(`${file}: published must be true or false`);
   for (const [, id] of source.matchAll(/\b(?:citation|cite|CitationMark)\s*(?:id\s*=\s*)?["'{`]([a-z0-9-]+)["'}`]/gi)) {
     if (!citationMap.has(id)) errors.push(`${file}: citation "${id}" is missing from src/citations.json`);
   }
