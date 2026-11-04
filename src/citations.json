@@ -1,0 +1,46 @@
+[
+  {
+    "id": "goldstein",
+    "author": "H. Goldstein, C. Poole & J. Safko",
+    "title": "Classical Mechanics, 3rd ed.",
+    "publisher": "Pearson",
+    "year": 2002,
+    "tier": "Foundations",
+    "topic": "Kinematics",
+    "explanation": "A standard derivation of position, velocity, and coordinate transformations in Newtonian mechanics.",
+    "url": "https://doi.org/10.1201/9780429503553"
+  },
+  {
+    "id": "strang",
+    "author": "G. Strang",
+    "title": "Introduction to Linear Algebra, 5th ed.",
+    "publisher": "Wellesley-Cambridge Press",
+    "year": 2016,
+    "tier": "Foundations",
+    "topic": "Linear algebra",
+    "explanation": "Geometric interpretation of vectors, bases, linear combinations, and coordinate representations.",
+    "url": "https://math.mit.edu/~gs/linearalgebra/"
+  },
+  {
+    "id": "siciliano",
+    "author": "B. Siciliano et al.",
+    "title": "Robotics: Modelling, Planning and Control",
+    "publisher": "Springer",
+    "year": 2009,
+    "tier": "Intermediate",
+    "topic": "Robotics",
+    "explanation": "Shows how frames and vector quantities are composed in robot kinematics and control.",
+    "url": "https://doi.org/10.1007/978-1-84628-642-1"
+  },
+  {
+    "id": "battin",
+    "author": "R. H. Battin",
+    "title": "An Introduction to the Mathematics and Methods of Astrodynamics",
+    "publisher": "AIAA",
+    "year": 1999,
+    "tier": "Advanced",
+    "topic": "Orbital mechanics",
+    "explanation": "Develops position and velocity vectors as the state variables of an orbit.",
+    "url": "https://arc.aiaa.org/doi/book/10.2514/4.861543"
+  }
+]
