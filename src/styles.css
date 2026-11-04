@@ -11,3 +11,4 @@
 .progress-button,.reset-progress{border:1px solid var(--blue);background:#fff;color:var(--blue);border-radius:3px;padding:8px 11px;font:500 11px 'DM Mono'}
 .progress-button{margin-top:14px}.progress-button[aria-pressed="true"]{background:var(--pale)}.article-complete{margin-top:30px}.reset-progress{margin-top:14px}
 .export-button{border:1px solid var(--blue);background:#fff;color:var(--blue);border-radius:3px;padding:8px 11px;font:500 11px 'DM Mono'}
+.glossary-link{border:0;background:transparent;color:var(--blue);padding:0;font:500 11px 'DM Mono'}.glossary-entry{display:grid;grid-template-columns:42px 1fr;gap:12px;border-top:1px solid var(--line);padding:18px 0}.glossary-symbol{color:var(--orange);font:500 22px Georgia}.glossary-entry h3{font:600 16px 'Space Grotesk';margin:0 0 6px}.glossary-entry p{font-size:13px!important;line-height:1.55;margin:0!important}
